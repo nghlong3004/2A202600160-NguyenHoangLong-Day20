@@ -7,6 +7,7 @@ from langgraph.errors import GraphRecursionError
 from langgraph.graph import END, START, StateGraph
 
 from multi_agent_research_lab.agents.analyst import AnalystAgent
+from multi_agent_research_lab.agents.critic import CriticAgent
 from multi_agent_research_lab.agents.researcher import ResearcherAgent
 from multi_agent_research_lab.agents.supervisor import SupervisorAgent
 from multi_agent_research_lab.agents.writer import WriterAgent
@@ -29,6 +30,7 @@ class MultiAgentWorkflow:
             "researcher": ResearcherAgent(),
             "analyst": AnalystAgent(),
             "writer": WriterAgent(),
+            "critic": CriticAgent(),
         }
 
     def _route(self, state: ResearchState) -> str:
@@ -50,6 +52,7 @@ class MultiAgentWorkflow:
         builder.add_node("researcher", self._agents["researcher"].run)
         builder.add_node("analyst", self._agents["analyst"].run)
         builder.add_node("writer", self._agents["writer"].run)
+        builder.add_node("critic", self._agents["critic"].run)
 
         # Add edges
         builder.add_edge(START, "supervisor")
@@ -62,6 +65,7 @@ class MultiAgentWorkflow:
                 "researcher": "researcher",
                 "analyst": "analyst",
                 "writer": "writer",
+                "critic": "critic",
                 END: END,
             },
         )
@@ -70,6 +74,7 @@ class MultiAgentWorkflow:
         builder.add_edge("researcher", "supervisor")
         builder.add_edge("analyst", "supervisor")
         builder.add_edge("writer", "supervisor")
+        builder.add_edge("critic", "supervisor")
 
         return builder.compile()
 

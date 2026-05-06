@@ -35,15 +35,41 @@ def test_supervisor_routes_to_writer_after_analysis() -> None:
     assert result.route_history[-1] == "writer"
 
 
-def test_supervisor_routes_done_when_complete() -> None:
-    """When final_answer exists, route done."""
+def test_supervisor_routes_to_critic_after_writing() -> None:
+    """When final_answer exists but no critic_review, route to critic."""
     state = _make_state(
         research_notes="N",
         analysis_notes="A",
         final_answer="Done",
     )
     result = SupervisorAgent().run(state)
+    assert result.route_history[-1] == "critic"
+
+
+def test_supervisor_routes_done_when_critic_approves() -> None:
+    """When critic_review gives score >= 7, route done."""
+    state = _make_state(
+        research_notes="N",
+        analysis_notes="A",
+        final_answer="Done",
+        critic_review="SCORE: 9/10 - Great job!",
+    )
+    result = SupervisorAgent().run(state)
     assert result.route_history[-1] == "done"
+
+
+def test_supervisor_routes_writer_when_critic_rejects() -> None:
+    """When critic_review gives score < 7, route to writer and clear state."""
+    state = _make_state(
+        research_notes="N",
+        analysis_notes="A",
+        final_answer="Bad answer",
+        critic_review="SCORE: 5/10 - Missing citations.",
+    )
+    result = SupervisorAgent().run(state)
+    assert result.route_history[-1] == "writer"
+    assert result.final_answer is None
+    assert result.critic_review is None
 
 
 def test_supervisor_enforces_max_iterations() -> None:

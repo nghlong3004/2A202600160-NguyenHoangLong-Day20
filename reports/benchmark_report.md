@@ -6,13 +6,13 @@
 
 | Run | Latency (s) | Cost (USD) | Quality | Notes |
 |---|---:|---:|---:|---|
-| single-agent-baseline | 16.30 | $0.000305 |  | answer_length=5068 |
-| multi-agent-workflow | 49.75 | $0.001566 |  | answer_length=3973, routes=researcher→analyst→writer→done |
+| single-agent-baseline | 19.93 | $0.000314 |  | answer_length=5159 |
+| multi-agent-workflow | 70.05 | $0.002216 |  | answer_length=4516, routes=researcher→analyst→writer→critic→done |
 
 ## Analysis
 
-- **Latency ratio**: Multi-agent is 3.1x slower than baseline
-- **Cost ratio**: Multi-agent costs 5.1x the baseline
+- **Latency ratio**: Multi-agent is 3.5x slower than baseline
+- **Cost ratio**: Multi-agent costs 7.1x the baseline
 - **Trade-off**: Multi-agent provides structured research with sources and analysis at the cost of higher latency and token usage
 
 
@@ -20,81 +20,122 @@
 
 ### Query
 
-> Research GraphRAG state-of-the-art and write a 500-word summary
+> Describe the self-reflection pattern in LLM agents.
 
 ### Single-Agent Baseline Output
 
-**GraphRAG: State-of-the-Art and Emerging Paradigms**
+Here is a comprehensive description of the self-reflection pattern in LLM agents.
 
-GraphRAG (Graph-based Retrieval-Augmented Generation) represents a significant evolution in the architecture of large language model (LLM) applications. While standard RAG systems rely on vector similarity search over flat document chunks, GraphRAG introduces a structured, relational layer—typically a knowledge graph (KG)—to capture entities, their attributes, and the semantic connections between them. This shift addresses fundamental limitations of flat retrieval, such as poor handling of multi-hop reasoning, entity disambiguation, and global context aggregation. As of mid-2025, the state-of-the-art in GraphRAG is defined by three key trends: **hybrid retrieval architectures**, **dynamic graph construction**, and **graph-native reasoning**.
+### The Self-Reflection Pattern in LLM Agents
 
-**1. Hybrid Retrieval: Combining Vector and Graph Signals**
-The most effective current systems do not rely solely on graph traversal. Instead, they employ a hybrid approach that fuses dense vector retrieval (e.g., using embeddings from models like `text-embedding-3-large` or `E5-mistral`) with graph-based traversal. For example, a query might first retrieve candidate entities via semantic similarity, then expand the context by traversing the graph's edges (e.g., "co-author of," "located in," "causes") to gather relational evidence. Microsoft's **GraphRAG** (2024) pioneered this by using a "community detection" step: it partitions the KG into hierarchical communities, generates summary descriptions for each community, and then retrieves the most relevant community summaries for a query. This allows the system to answer global questions (e.g., "What are the main themes in this dataset?") that flat RAG struggles with. More recent work, such as **LightRAG** (2025), optimizes this by using a dual-level indexing of entities and relationships, enabling faster retrieval while maintaining high recall on multi-hop queries.
+The self-reflection pattern is a sophisticated meta-cognitive technique used to enhance the performance, reliability, and safety of Large Language Model (LLM) agents. Instead of generating a single, final output, an agent employing self-reflection iteratively evaluates its own reasoning, actions, and outputs, using that evaluation to refine subsequent attempts. This pattern transforms an LLM from a one-shot predictor into an adaptive problem-solver.
 
-**2. Dynamic and Self-Constructing Graphs**
-A major bottleneck in early GraphRAG was the need for a pre-existing, static knowledge graph, which is expensive to build and maintain. The state-of-the-art now emphasizes **dynamic graph construction** from the corpus itself. Systems like **GraphRAG** (Microsoft) and **HippoRAG** (2024) use LLMs to extract entities and relationships from documents on-the-fly during indexing. This "graph-of-documents" approach creates a graph where nodes are entities (people, places, concepts) and edges are relationships (e.g., "works for," "is a type of"). The graph is then stored in a graph database (e.g., Neo4j, Amazon Neptune) or a specialized vector-graph hybrid store. Crucially, these systems also support **incremental updates**: new documents can be processed to add nodes and edges without rebuilding the entire index. This makes GraphRAG practical for dynamic corpora like news feeds, scientific literature, or enterprise wikis.
+**Core Mechanism: The Reflection Loop**
 
-**3. Graph-Native Reasoning and Multi-Hop Capabilities**
-The most advanced GraphRAG systems are moving beyond simple retrieval to perform **graph-native reasoning**. Instead of just retrieving a subgraph and feeding it as text to the LLM, these systems use the graph structure to guide the LLM's reasoning process. For example, **Graph-Toolformer** (2024) and **StructGPT** (2023) allow the LLM to issue graph queries (e.g., "find all nodes connected to node X via path length 2") as part of its reasoning loop. This enables the model to perform multi-step deduction, such as "Who is the CEO of the company that acquired the startup founded by X?"—a query that would require multiple vector lookups and manual chaining in flat RAG. More recent work, such as **GraphRAG with LLM-as-a-Planner** (2025), uses the LLM to generate a traversal plan (e.g., "first find the entity, then traverse its 'acquired' edge, then find the CEO") and executes it against the graph, retrieving only the necessary nodes at each step. This reduces noise and improves answer accuracy on complex, multi-hop questions.
+The pattern operates as a closed loop with four key stages:
 
-**4. Evaluation and Benchmarks**
-The field is converging on standardized benchmarks. **CRAG** (Comprehensive RAG Benchmark) and **MultiHopQA** are now being adapted to include graph-specific metrics, such as path recall (did the system retrieve the correct relational path?) and entity disambiguation accuracy. State-of-the-art systems achieve >85% accuracy on multi-hop questions, compared to ~60% for flat RAG, but at the cost of higher latency and indexing complexity.
+1.  **Generation (Act):** The agent receives a task (e.g., "Write a Python function to sort a list") and produces an initial output (e.g., a buggy sorting algorithm).
+2.  **Evaluation (Observe):** The agent critically analyzes its own output. This is not a simple "good/bad" check but a structured critique. It might ask itself: "Does this function handle edge cases like an empty list?" or "Is the time complexity optimal?" This evaluation can be guided by a rubric, a set of constraints, or an external tool (e.g., running the code and checking for errors).
+3.  **Feedback Synthesis (Reflect):** The agent synthesizes the evaluation into concrete, actionable feedback. For example: "The function fails for an empty list because it tries to access index 0. I need to add a check for an empty list at the beginning."
+4.  **Refinement (Re-act):** The agent uses the synthesized feedback to generate a new, improved version of its output. This new output is then fed back into the evaluation stage, creating an iterative cycle.
 
-**Conclusion**
-GraphRAG is no longer a niche research topic; it is becoming the default architecture for enterprise RAG systems that require factual consistency, multi-hop reasoning, and global understanding. The current frontier involves reducing the computational overhead of graph construction, improving the LLM's ability to "read" graph structures natively, and developing robust evaluation frameworks that capture both retrieval and reasoning quality. As graph databases and vector stores continue to converge, we can expect GraphRAG to become as standard as flat RAG is today.
+**Why Self-Reflection is Powerful**
+
+- **Error Correction:** It catches and fixes logical errors, factual inaccuracies, and omissions that a single-pass generation would miss. This is crucial for tasks like code generation, mathematical reasoning, and complex planning.
+- **Improved Reasoning:** By forcing the agent to articulate *why* a previous attempt was flawed, it strengthens its chain-of-thought and deepens its understanding of the problem.
+- **Adaptability:** The agent can adapt its approach based on the specific nuances of a task. For example, if a first attempt at a creative writing task is too formal, the reflection can identify this and guide the next attempt to be more conversational.
+- **Safety and Alignment:** The agent can reflect on its own outputs for potential biases, harmful instructions, or violations of safety policies, acting as a self-censor before the output is delivered to the user.
+
+**Common Implementation Strategies**
+
+- **Single-Agent Reflection:** The same LLM plays all roles (generator, evaluator, refiner). This is simple but can be limited by the model's own blind spots.
+- **Multi-Agent Debate:** Two or more LLM instances (or different models) take on different roles. One generates, another critiques. This introduces diverse perspectives and can lead to more robust reflection, as the critic is not constrained by the generator's initial reasoning path.
+- **Tool-Augmented Reflection:** The agent uses external tools (e.g., a code interpreter, a search engine, a calculator) during the evaluation stage. For instance, it can run generated code to see if it compiles, or search for a fact to verify a claim. This grounds the reflection in objective reality.
+
+**Example: A Self-Reflecting Code Agent**
+
+- **Task:** "Write a Python function to find the most frequent element in a list."
+- **Attempt 1:** `def most_frequent(lst): return max(set(lst), key=lst.count)`
+- **Evaluation:** "This works for non-empty lists but is inefficient (O(n²) due to `lst.count`). It will also fail for an empty list with a `ValueError`."
+- **Feedback:** "Optimize by using a dictionary to count frequencies in O(n). Add a check for an empty list."
+- **Attempt 2:** `def most_frequent(lst): if not lst: return None; counts = {}; for item in lst: counts[item] = counts.get(item, 0) + 1; return max(counts, key=counts.get)`
+- **Evaluation:** "This is O(n) and handles empty lists. It correctly returns the first most frequent element in case of ties. No further issues detected."
+- **Output:** The refined function is returned.
+
+**Challenges and Limitations**
+
+- **Computational Cost:** Each reflection cycle requires multiple LLM calls, increasing latency and token usage.
+- **Over-Reflection:** The agent can get stuck in a loop, making minor, unnecessary changes or "hallucinating" problems that don't exist.
+- **Confirmation Bias:** A single-agent system may struggle to identify fundamental flaws in its own reasoning, as it is essentially trying to "catch itself."
+- **Evaluation Quality:** The entire pattern hinges on the quality of the evaluation. A weak evaluator will lead to poor feedback and ineffective refinement.
+
+In summary, the self-reflection pattern is a powerful architectural choice for building more capable and reliable LLM agents. It moves beyond simple generation to create a dynamic, iterative process of action, observation, and improvement, mirroring a key aspect of human problem-solving.
 
 ### Multi-Agent Output
 
-# GraphRAG State-of-the-Art: A Technical Overview (2025)
+# The Self-Reflection Pattern in LLM Agents
 
-Graph-based Retrieval-Augmented Generation (GraphRAG) represents a paradigm shift from traditional vector-based RAG systems. By structuring knowledge as a graph of entities and relationships, GraphRAG enables multi-hop reasoning and global thematic understanding that flat retrieval cannot achieve.
+## Definition and Core Concept
 
-## Core Architecture and Innovations
+The self-reflection pattern is a meta-cognitive capability in LLM agents where the agent systematically analyzes its own past actions, outputs, and environmental feedback to improve future performance. Unlike simple trial-and-error, self-reflection involves a structured, multi-step process of critique, reasoning, and revision. This pattern enables agents to move beyond single-shot generation to iterative problem-solving, acting as both performer and critic of their own work.
 
-The state-of-the-art in GraphRAG is defined by three key architectural components:
+## The Self-Reflection Loop
 
-**Hierarchical Graph Construction** – Popularized by Microsoft Research, this approach builds a two-tier structure: a knowledge graph of entities and relationships extracted by LLMs, and a community hierarchy that clusters related nodes at varying granularities. This enables both specific fact retrieval and high-level summarization from the same index.
+The process follows a cyclical pattern:
 
-**Hybrid Retrieval** – Modern systems combine graph traversal (BFS/DFS from seed entities) with vector similarity search over node embeddings. A query first retrieves candidate nodes semantically, then expands context by traversing graph neighbors. Frameworks like LightRAG and Neo4j's GenAI stack implement this hybrid approach as standard.
+1. **Action/Generation**: The agent performs a task (e.g., writes code, answers a question)
+2. **Observation/Feedback**: The agent receives feedback, which can be:
+   - **External**: Error messages, reward scores, user corrections, or tool results
+   - **Internal**: The agent's own critique based on a rubric or knowledge
+3. **Reflection**: The agent analyzes the discrepancy between the intended goal and observed outcome, asking questions like "Why did this fail?" and "What should I have done instead?"
+4. **Revision**: The agent generates a new action or output based on reflection insights
 
-**LLM-as-a-Router** – A lightweight LLM call determines the retrieval strategy per query: direct node lookup for simple factoids, multi-hop traversal for analytical questions, or community summary generation for thematic queries.
+## Key Implementations
 
-## Performance and Benchmarks
+Several prominent frameworks have formalized this pattern:
 
-GraphRAG consistently outperforms vanilla RAG on multi-hop reasoning tasks by 15-25% in F1 score on HotpotQA and 2WikiMultihopQA benchmarks. For global queries requiring thematic understanding, Microsoft's GraphRAG achieved 7-10% improvement in comprehensiveness on the QAMPARI dataset.
+- **Reflexion (Shinn et al., 2023)**: Maintains persistent "memory" of reflections in long-term storage. After each task attempt, the agent generates a textual summary of what went wrong, stored as context for future episodes—a form of "verbal reinforcement learning" without fine-tuning.
 
-The primary trade-off is indexing cost: building graphs and community summaries requires 10-100x more LLM calls than text chunking. However, query-time latency is comparable to or faster than standard RAG for complex queries, as relationships are pre-computed.
+- **Self-Refine (Madaan et al., 2023)**: Operates in a single or few iterations without long-term memory. The LLM generates an initial output, produces feedback on it, and refines it—all in one forward pass or a few iterations.
 
-## Emerging Trends
+- **Chain-of-Thought with Self-Consistency**: Generates multiple reasoning paths and selects the most consistent answer, representing implicit reflection through comparison of internal trajectories.
 
-**Dynamic Graph Updates** – Systems like GraphRAG-Light use delta-based updates to add new nodes and edges without full re-indexing, enabling real-time knowledge maintenance.
+- **Critique & Revision Agents**: Modern frameworks (e.g., LangGraph, AutoGen) implement explicit "critic" nodes—separate LLM calls that evaluate the primary agent's output and provide structured feedback for revision.
 
-**Multi-Modal GraphRAG** – Frontier systems build graphs linking text to image nodes, enabling cross-modal retrieval (e.g., "Show images of landmarks by Gustave Eiffel").
+## Benefits and Strengths
 
-**Agentic GraphRAG** – Autonomous agents iteratively query the graph, refine search paths, and write back new information, creating self-improving knowledge systems.
+- **Improved Accuracy**: Dramatically reduces errors in complex, multi-step tasks like code generation and mathematical reasoning
+- **No Fine-Tuning Required**: Improves performance purely through in-context learning and prompt engineering
+- **Enhanced Explainability**: Reflection steps produce natural language traces of reasoning, making decisions more transparent
+- **Real-Time Adaptability**: Agents can adapt to novel scenarios by reflecting on failures immediately
 
-## Key Challenges
+## Limitations and Challenges
 
-Entity resolution remains problematic—LLMs struggle with coreference (e.g., "Apple" fruit vs. company), and errors cascade through the graph. Scalability of community summarization for millions of documents is prohibitively expensive, driving research into selective summarization. The field lacks standardized benchmarks, with most evaluations being task-specific.
+- **Hallucination in Reflection**: LLMs may generate plausible-sounding but incorrect reflections, potentially introducing new errors
+- **Computational Cost**: Each reflection step requires additional LLM calls, increasing latency and token usage
+- **Over-Correction and Loops**: Agents can get stuck in infinite loops of reflection and revision without progress
+- **Prompt Sensitivity**: Effectiveness depends heavily on the quality of critique prompts
+- **Knowledge Limitations**: Reflection cannot discover fundamentally new strategies beyond the model's training data
 
-## Leading Frameworks
+## Trends and Future Directions
 
-- **Microsoft GraphRAG** – Reference implementation for hierarchical graph RAG, best for global summarization
-- **LightRAG** – Optimized for speed and incremental updates with flat graph structure
-- **Neo4j + LangChain/LlamaIndex** – Most mature enterprise stack combining graph database with LLM orchestration
-- **KuzuDB + DSPy** – Emerging high-performance alternative for graph analytics with programmatic LLM optimization
+- **Structured Reflection**: Moving from free-text to structured outputs (e.g., JSON with "error_type," "root_cause," "fix_plan") for improved reliability
+- **Multi-Agent Reflection**: Using multiple specialized agents (generator, critic, refiner) that debate and critique each other's outputs
+- **Memory-Augmented Reflection**: Storing reflections in vector databases for long-term recall across tasks
+- **Integration with External Tools**: Combining reflection with tool use (e.g., adjusting search strategies after failed queries)
+- **Self-Improving Agents**: The ultimate goal of autonomous improvement of prompts, strategies, and even model weights through continuous reflection cycles
 
-## Future Directions
+## Sources
 
-The field is moving toward Graph-of-Thoughts reasoning, federated retrieval across private graphs, and self-correcting graphs that automatically detect inconsistencies. These advances promise to make GraphRAG the backbone of next-generation knowledge systems.
-
----
-
-*Sources: The above summary synthesizes established knowledge in the GraphRAG field as of early 2025, drawing from Microsoft Research's GraphRAG paper, LightRAG documentation, and community benchmarks on HotpotQA and QAMPARI datasets. Specific citations are unavailable as the research notes provided no source references.*
+- Shinn, N., et al. (2023). "Reflexion: Language Agents with Verbal Reinforcement Learning"
+- Madaan, A., et al. (2023). "Self-Refine: Iterative Refinement with Self-Feedback"
+- Wei, J., et al. (2022). "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models"
+- LangGraph Documentation (2024). "Multi-Agent Systems and Critique Nodes"
+- AutoGen Papers (2023). "Conversational Agents for Multi-Agent Collaboration"
 
 ### Route History
 
-`researcher  →  analyst  →  writer  →  done`
+`researcher  →  analyst  →  writer  →  critic  →  done`
 
 ### Trace Events
 
@@ -112,7 +153,7 @@ The field is moving toward Graph-of-Thoughts reasoning, federated retrieval acro
     "name": "researcher",
     "payload": {
       "sources_found": 0,
-      "notes_length": 6522
+      "notes_length": 7247
     }
   },
   {
@@ -126,7 +167,7 @@ The field is moving toward Graph-of-Thoughts reasoning, federated retrieval acro
   {
     "name": "analyst",
     "payload": {
-      "analysis_length": 5783
+      "analysis_length": 7405
     }
   },
   {
@@ -140,22 +181,36 @@ The field is moving toward Graph-of-Thoughts reasoning, federated retrieval acro
   {
     "name": "writer",
     "payload": {
-      "answer_length": 3973
+      "answer_length": 4516
+    }
+  },
+  {
+    "name": "supervisor",
+    "payload": {
+      "decision": "critic",
+      "reason": "final answer produced, need critic review",
+      "iteration": 4
+    }
+  },
+  {
+    "name": "critic",
+    "payload": {
+      "review_length": 1640
     }
   },
   {
     "name": "supervisor",
     "payload": {
       "decision": "done",
-      "reason": "final answer produced",
-      "iteration": 4
+      "reason": "critic approved with score 9/10",
+      "iteration": 5
     }
   },
   {
     "name": "workflow",
     "payload": {
       "event": "complete",
-      "total_seconds": 48.47912879999785
+      "total_seconds": 68.00889719999395
     }
   }
 ]

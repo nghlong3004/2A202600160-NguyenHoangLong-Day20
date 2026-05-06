@@ -60,7 +60,10 @@ class CriticAgent(BaseAgent):
                 },
             )
         )
-        state.add_trace_event("critic", {"review_length": len(response.content)})
+        state.critic_review = response.content
+        state.add_trace_event(
+            "critic", {"review_length": len(response.content)},
+        )
 
         logger.info("[Critic] Done — review complete")
         return state

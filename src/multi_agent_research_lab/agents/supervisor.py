@@ -50,9 +50,24 @@ class SupervisorAgent(BaseAgent):
         elif not state.final_answer:
             next_route = "writer"
             reason = "analysis done, need final answer"
+        elif not state.critic_review:
+            next_route = "critic"
+            reason = "final answer produced, need critic review"
         else:
-            next_route = "done"
-            reason = "final answer produced"
+            # Parse score from critic
+            import re
+            match = re.search(r"SCORE:\s*(\d+)", state.critic_review)
+            score = int(match.group(1)) if match else 0
+            
+            if score >= 7:
+                next_route = "done"
+                reason = f"critic approved with score {score}/10"
+            else:
+                next_route = "writer"
+                reason = f"critic rejected (score {score}/10) - rewriting"
+                # Reset for the next loop
+                state.final_answer = None
+                state.critic_review = None
 
         logger.info(
             "[Supervisor] Route → %s (reason: %s, iter: %d)",
