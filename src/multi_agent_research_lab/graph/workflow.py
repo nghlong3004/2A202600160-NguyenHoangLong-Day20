@@ -1,10 +1,10 @@
-"""Loop-based multi-agent workflow orchestrator.
-
-Keep orchestration here; keep agent internals in ``agents/``.
-"""
+"""LangGraph-based multi-agent workflow orchestrator."""
 
 import logging
 from time import perf_counter
+
+from langgraph.errors import GraphRecursionError
+from langgraph.graph import END, START, StateGraph
 
 from multi_agent_research_lab.agents.analyst import AnalystAgent
 from multi_agent_research_lab.agents.researcher import ResearcherAgent
@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class MultiAgentWorkflow:
-    """Builds and runs the multi-agent graph.
+    """Builds and runs the LangGraph multi-agent workflow.
 
-    Flow: Supervisor decides → dispatch to worker → repeat until done.
-    Guardrails: max_iterations, timeout_seconds, per-agent errors.
+    Flow: Supervisor decides → dispatch to worker → return to supervisor.
+    Guardrails: max_iterations (via supervisor), timeout_seconds.
     """
 
     def __init__(self) -> None:
@@ -31,13 +31,50 @@ class MultiAgentWorkflow:
             "writer": WriterAgent(),
         }
 
-    def build(self) -> dict[str, object]:
-        """Return the agent registry."""
+    def _route(self, state: ResearchState) -> str:
+        """Route from supervisor based on the last recorded route."""
+        last_route = (
+            state.route_history[-1] if state.route_history else "done"
+        )
+        if last_route == "done":
+            return END
+        return last_route
 
-        return {"supervisor": self._supervisor, **self._agents}
+    def build(self) -> object:
+        """Compile and return the LangGraph application."""
+
+        builder = StateGraph(ResearchState)
+
+        # Add nodes
+        builder.add_node("supervisor", self._supervisor.run)
+        builder.add_node("researcher", self._agents["researcher"].run)
+        builder.add_node("analyst", self._agents["analyst"].run)
+        builder.add_node("writer", self._agents["writer"].run)
+
+        # Add edges
+        builder.add_edge(START, "supervisor")
+
+        # Supervisor conditional routing
+        builder.add_conditional_edges(
+            "supervisor",
+            self._route,
+            {
+                "researcher": "researcher",
+                "analyst": "analyst",
+                "writer": "writer",
+                END: END,
+            },
+        )
+
+        # All workers return to supervisor
+        builder.add_edge("researcher", "supervisor")
+        builder.add_edge("analyst", "supervisor")
+        builder.add_edge("writer", "supervisor")
+
+        return builder.compile()
 
     def run(self, state: ResearchState) -> ResearchState:
-        """Execute the workflow loop and return final state."""
+        """Execute the workflow graph and return the final state."""
 
         settings = get_settings()
         started = perf_counter()
@@ -50,55 +87,48 @@ class MultiAgentWorkflow:
             settings.timeout_seconds,
         )
 
-        while True:
-            # Check timeout
-            elapsed = perf_counter() - started
-            if elapsed > settings.timeout_seconds:
-                logger.warning("Workflow timeout after %.1fs", elapsed)
-                state.errors.append(
-                    f"Workflow timeout after {elapsed:.1f}s",
-                )
-                state.add_trace_event("workflow", {
-                    "event": "timeout",
-                    "elapsed": elapsed,
-                })
-                break
+        app = self.build()
 
-            # Supervisor decides next step
-            state = self._supervisor.run(state)
-            last_route = (
-                state.route_history[-1]
-                if state.route_history
-                else "done"
-            )
+        try:
+            # We use stream to intercept execution and check timeout
+            for output in app.stream(
+                state,
+                {"recursion_limit": settings.max_iterations * 3},
+            ):
+                # Update our current reference to the state object
+                node_name = list(output.keys())[0]
+                node_output = output[node_name]
+                
+                # LangGraph converts BaseModel to dict in stream output
+                if isinstance(node_output, dict):
+                    state = ResearchState(**node_output)
+                else:
+                    state = node_output
 
-            if last_route == "done":
-                logger.info("Supervisor decided: done")
-                break
-
-            # Dispatch to worker agent
-            agent = self._agents.get(last_route)
-            if agent is None:
-                logger.error("Unknown route: %s", last_route)
-                state.errors.append(f"Unknown route: {last_route}")
-                break
-
-            try:
-                logger.info(
-                    "--- Dispatching: %s (iter %d) ---",
-                    last_route,
-                    state.iteration,
-                )
-                state = agent.run(state)
-            except Exception as exc:
-                error_msg = f"Agent '{last_route}' failed: {exc}"
-                logger.error(error_msg, exc_info=True)
-                state.errors.append(error_msg)
-                state.add_trace_event("error", {
-                    "agent": last_route,
-                    "error": str(exc),
-                })
-                continue
+                # Check timeout
+                elapsed = perf_counter() - started
+                if elapsed > settings.timeout_seconds:
+                    logger.warning("Workflow timeout after %.1fs", elapsed)
+                    state.errors.append(
+                        f"Workflow timeout after {elapsed:.1f}s"
+                    )
+                    state.add_trace_event("workflow", {
+                        "event": "timeout",
+                        "elapsed": elapsed,
+                    })
+                    break
+        except GraphRecursionError:
+            # Handled internally by SupervisorAgent guardrails usually,
+            # but if it escapes, we catch it here.
+            error_msg = "GraphRecursionError: Max iterations exceeded"
+            logger.error(error_msg)
+            state.errors.append(error_msg)
+            state.add_trace_event("error", {"error": error_msg})
+        except Exception as exc:
+            error_msg = f"Workflow failed: {exc}"
+            logger.error(error_msg, exc_info=True)
+            state.errors.append(error_msg)
+            state.add_trace_event("error", {"error": str(exc)})
 
         total_time = perf_counter() - started
         state.add_trace_event("workflow", {
