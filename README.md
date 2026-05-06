@@ -1,156 +1,90 @@
-# Lab 20: Multi-Agent Research System Starter
+# Multi-Agent Research System
 
-Starter repo cho bài lab **Multi-Agent Systems**: xây dựng hệ thống nghiên cứu gồm **Supervisor + Researcher + Analyst + Writer** và benchmark với single-agent baseline.
+A production-grade multi-agent research system built with LangGraph, DeepSeek, and DuckDuckGo. This project orchestrates multiple specialized AI agents to research, analyze, write, and critique a user query, providing high-quality automated research outputs.
 
-> Mục tiêu của repo này là cung cấp **production-grade skeleton** để học viên phát triển code cá nhân. Các phần logic quan trọng được để ở dạng `TODO` để học viên tự triển khai.
+## Architecture
 
-## Learning outcomes
+The system utilizes a cyclic LangGraph StateGraph with the following agent nodes:
 
-Sau 2 giờ lab, học viên cần có thể:
+1. Supervisor: Acts as the central router and orchestrator. It manages the state, checks guardrails (iteration limits, timeouts), and routes tasks to the appropriate worker agent based on the current state.
+2. Researcher: Conducts web searches using DuckDuckGo to gather relevant source documents and compiles initial research notes.
+3. Analyst: Analyzes the research notes, synthesizes the findings, and prepares a structured analysis.
+4. Writer: Drafts the final comprehensive answer based on the analysis.
+5. Critic: Acts as a quality assurance feedback loop. It evaluates the writer's final answer against the original sources. If the score is below 7/10, the output is rejected and sent back for revision.
 
-1. Thiết kế role rõ ràng cho nhiều agent.
-2. Xây dựng shared state đủ thông tin cho handoff.
-3. Thêm guardrail tối thiểu: max iterations, timeout, retry/fallback, validation.
-4. Trace được luồng chạy và giải thích agent nào làm gì.
-5. Benchmark single-agent vs multi-agent theo quality, latency, cost.
+## Prerequisites
 
-## Architecture mục tiêu
+- Python 3.12 or higher
+- API Keys:
+  - DeepSeek API Key (or OpenAI compatible key)
 
-```text
-User Query
-   |
-   v
-Supervisor / Router
-   |------> Researcher Agent  -> research_notes
-   |------> Analyst Agent     -> analysis_notes
-   |------> Writer Agent      -> final_answer
-   |
-   v
-Trace + Benchmark Report
-```
+## Installation
 
-## Cấu trúc repo
+1. Clone the repository and navigate to the project directory:
+   ```bash
+   git clone <repository_url>
+   cd <repository_directory>
+   ```
 
-```text
-.
-├── src/multi_agent_research_lab/
-│   ├── agents/              # Agent interfaces + skeletons
-│   ├── core/                # Config, state, schemas, errors
-│   ├── graph/               # LangGraph workflow skeleton
-│   ├── services/            # LLM, search, storage clients
-│   ├── evaluation/          # Benchmark/evaluation skeleton
-│   ├── observability/       # Logging/tracing hooks
-│   └── cli.py               # CLI entrypoint
-├── configs/                 # YAML configs for lab variants
-├── docs/                    # Lab guide, rubric, design notes
-├── tests/                   # Unit tests for skeleton behavior
-├── notebooks/               # Optional notebook entrypoint
-├── scripts/                 # Helper scripts
-├── .env.example             # Environment variables template
-├── pyproject.toml           # Python project config
-├── Dockerfile               # Containerized dev/runtime
-└── Makefile                 # Common commands
-```
+2. Create and activate a virtual environment:
+   ```bash
+   # Windows
+   python -m venv .venv
+   .venv\Scripts\activate
+   
+   # Linux/macOS
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
 
-## Quickstart
+3. Install the dependencies:
+   ```bash
+   pip install -e .
+   ```
 
-### 1. Tạo môi trường
+## Configuration
 
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Open the `.env` file and configure your API keys. For DeepSeek:
+   ```env
+   OPENAI_API_KEY=your_deepseek_api_key
+   OPENAI_BASE_URL=https://api.deepseek.com
+   ```
+
+## Usage
+
+The system provides a command-line interface (CLI) to interact with the agents.
+
+### 1. Single-Agent Baseline
+Run a simple, single-agent prompt without the graph orchestrator. Useful for comparing performance and cost against the multi-agent system.
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
-pip install -e "[dev]"
-cp .env.example .env
+python -m multi_agent_research_lab.cli baseline -q "Describe the self-reflection pattern in LLM agents."
 ```
 
-### 2. Cấu hình API keys
-
-Mở `.env` và điền key cần thiết.
-
+### 2. Multi-Agent Workflow
+Run the full LangGraph orchestration with the Researcher, Analyst, Writer, and Critic feedback loop.
 ```bash
-OPENAI_API_KEY=...
-# optional
-LANGSMITH_API_KEY=...
-TAVILY_API_KEY=...
+python -m multi_agent_research_lab.cli multi-agent -q "Describe the self-reflection pattern in LLM agents."
 ```
 
-### 3. Chạy smoke test
-
+### 3. Automated Benchmark
+Run both the baseline and the multi-agent workflow sequentially. The system will automatically generate an execution trace and a comparative markdown report detailing latency, token cost, and output quality.
 ```bash
-make test
-python -m multi_agent_research_lab.cli --help
+python -m multi_agent_research_lab.cli benchmark -q "Describe the self-reflection pattern in LLM agents."
 ```
 
-### 4. Chạy baseline skeleton
+## Testing
 
+To verify the logic and routing of the agents, run the automated test suite using pytest:
 ```bash
-python -m multi_agent_research_lab.cli baseline \
-  --query "Research GraphRAG state-of-the-art and write a 500-word summary"
+python -m pytest tests/ -v
 ```
 
-Lệnh này chỉ chạy khung baseline tối giản. Học viên cần tự triển khai logic LLM thực tế trong `src/multi_agent_research_lab/services/llm_client.py`.
+## Tracing and Evaluation
 
-### 5. Chạy multi-agent skeleton
-
-```bash
-python -m multi_agent_research_lab.cli multi-agent \
-  --query "Research GraphRAG state-of-the-art and write a 500-word summary"
-```
-
-Mặc định lệnh sẽ báo các `TODO` cần làm. Đây là chủ đích của starter repo.
-
-## Milestones trong 2 giờ lab
-
-| Thời lượng | Milestone | File gợi ý |
-|---:|---|---|
-| 0-15' | Setup, chạy baseline skeleton | `cli.py`, `services/llm_client.py` |
-| 15-45' | Build Supervisor / router | `agents/supervisor.py`, `graph/workflow.py` |
-| 45-75' | Thêm Researcher, Analyst, Writer | `agents/*.py`, `core/state.py` |
-| 75-95' | Trace + benchmark single vs multi | `observability/tracing.py`, `evaluation/benchmark.py` |
-| 95-115' | Peer review theo rubric | `docs/peer_review_rubric.md` |
-| 115-120' | Exit ticket | `docs/lab_guide.md` |
-
-## Quy ước production trong repo
-
-- Tách rõ `agents`, `services`, `core`, `graph`, `evaluation`, `observability`.
-- Không hard-code API key trong code.
-- Tất cả input/output chính dùng Pydantic schema.
-- Có type hints, linting, formatting, unit test tối thiểu.
-- Có logging/tracing hook ngay từ đầu.
-- Không để agent chạy vô hạn: dùng `max_iterations`, `timeout_seconds`.
-- Có benchmark report thay vì chỉ demo output đẹp.
-
-## TODO chính cho học viên
-
-Tìm trong code các marker:
-
-```bash
-grep -R "TODO(student)" -n src tests docs
-```
-
-Các phần học viên cần tự làm:
-
-1. Implement LLM client.
-2. Implement web/search client hoặc mock search source.
-3. Implement routing decision trong Supervisor.
-4. Implement từng worker agent.
-5. Build LangGraph workflow.
-6. Thêm tracing provider thật: LangSmith, Langfuse hoặc OpenTelemetry.
-7. Viết benchmark report.
-
-## Deliverables
-
-Học viên nộp:
-
-1. GitHub repo cá nhân.
-2. Screenshot trace hoặc link trace.
-3. `reports/benchmark_report.md` so sánh single vs multi-agent.
-4. Một đoạn giải thích failure mode và cách fix.
-
-## References
-
-- Anthropic: Building effective agents — https://www.anthropic.com/engineering/building-effective-agents
-- OpenAI Agents SDK orchestration/handoffs — https://developers.openai.com/api/docs/guides/agents/orchestration
-- LangGraph concepts — https://langchain-ai.github.io/langgraph/concepts/
-- LangSmith tracing — https://docs.smith.langchain.com/
-- Langfuse tracing — https://langfuse.com/docs
+- Execution Tracing: Every multi-agent run automatically generates a JSON trace file in the `reports/` directory, logging state changes, API calls, and routing decisions.
+- Benchmark Reports: The `benchmark` command generates a detailed comparative markdown report in `reports/benchmark_report.md`.
