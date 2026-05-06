@@ -1,0 +1,39 @@
+{
+  "total_spans": 4,
+  "export_time": "2026-05-06T07:13:08.243454+00:00",
+  "spans": [
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "researcher",
+        "reason": "no research notes yet",
+        "iteration": 1
+      },
+      "timestamp_offset": 1.2999997125007212e-05
+    },
+    {
+      "name": "researcher",
+      "attributes": {
+        "sources_found": 0,
+        "notes_length": 6884
+      },
+      "timestamp_offset": 2.4499997380189598e-05
+    },
+    {
+      "name": "workflow",
+      "attributes": {
+        "event": "timeout",
+        "elapsed": 210.0804358999958
+      },
+      "timestamp_offset": 2.8599999495781958e-05
+    },
+    {
+      "name": "workflow",
+      "attributes": {
+        "event": "complete",
+        "total_seconds": 210.08195790000173
+      },
+      "timestamp_offset": 3.0499999411404133e-05
+    }
+  ]
+}

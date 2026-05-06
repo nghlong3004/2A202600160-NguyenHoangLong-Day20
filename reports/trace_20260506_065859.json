@@ -1,0 +1,72 @@
+{
+  "total_spans": 8,
+  "export_time": "2026-05-06T06:58:59.208948+00:00",
+  "spans": [
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "researcher",
+        "reason": "no research notes yet",
+        "iteration": 1
+      },
+      "timestamp_offset": 9.099996532313526e-06
+    },
+    {
+      "name": "researcher",
+      "attributes": {
+        "sources_found": 0,
+        "notes_length": 4744
+      },
+      "timestamp_offset": 1.720000000204891e-05
+    },
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "analyst",
+        "reason": "research done, need analysis",
+        "iteration": 2
+      },
+      "timestamp_offset": 2.0399995264597237e-05
+    },
+    {
+      "name": "analyst",
+      "attributes": {
+        "analysis_length": 5093
+      },
+      "timestamp_offset": 2.2199994418770075e-05
+    },
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "writer",
+        "reason": "analysis done, need final answer",
+        "iteration": 3
+      },
+      "timestamp_offset": 2.359999780310318e-05
+    },
+    {
+      "name": "writer",
+      "attributes": {
+        "answer_length": 4217
+      },
+      "timestamp_offset": 2.559999848017469e-05
+    },
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "done",
+        "reason": "final answer produced",
+        "iteration": 4
+      },
+      "timestamp_offset": 2.729999687289819e-05
+    },
+    {
+      "name": "workflow",
+      "attributes": {
+        "event": "complete",
+        "total_seconds": 44.699589400006516
+      },
+      "timestamp_offset": 2.8700000257231295e-05
+    }
+  ]
+}
