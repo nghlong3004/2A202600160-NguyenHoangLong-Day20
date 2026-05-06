@@ -1,0 +1,88 @@
+{
+  "total_spans": 10,
+  "export_time": "2026-05-06T07:06:19.064375+00:00",
+  "spans": [
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "researcher",
+        "reason": "no research notes yet",
+        "iteration": 1
+      },
+      "timestamp_offset": 9.000003046821803e-06
+    },
+    {
+      "name": "researcher",
+      "attributes": {
+        "sources_found": 0,
+        "notes_length": 7247
+      },
+      "timestamp_offset": 1.7300000763498247e-05
+    },
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "analyst",
+        "reason": "research done, need analysis",
+        "iteration": 2
+      },
+      "timestamp_offset": 2.0699997548945248e-05
+    },
+    {
+      "name": "analyst",
+      "attributes": {
+        "analysis_length": 7405
+      },
+      "timestamp_offset": 2.220000169472769e-05
+    },
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "writer",
+        "reason": "analysis done, need final answer",
+        "iteration": 3
+      },
+      "timestamp_offset": 2.359999780310318e-05
+    },
+    {
+      "name": "writer",
+      "attributes": {
+        "answer_length": 4516
+      },
+      "timestamp_offset": 2.5300003471784294e-05
+    },
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "critic",
+        "reason": "final answer produced, need critic review",
+        "iteration": 4
+      },
+      "timestamp_offset": 2.630000381032005e-05
+    },
+    {
+      "name": "critic",
+      "attributes": {
+        "review_length": 1640
+      },
+      "timestamp_offset": 2.7800000680144876e-05
+    },
+    {
+      "name": "supervisor",
+      "attributes": {
+        "decision": "done",
+        "reason": "critic approved with score 9/10",
+        "iteration": 5
+      },
+      "timestamp_offset": 3.599999763537198e-05
+    },
+    {
+      "name": "workflow",
+      "attributes": {
+        "event": "complete",
+        "total_seconds": 68.00889719999395
+      },
+      "timestamp_offset": 3.7500001781154424e-05
+    }
+  ]
+}
